@@ -3,6 +3,7 @@ const { VoyageAIClient } = require("voyageai");
 
 const client = new VoyageAIClient({ apiKey: process.env.VOYAGE_API_KEY });
 
+// Embed ONE text -> returns a vector
 async function generateEmbedding(text) {
   const result = await client.embed({
     input: [text],
@@ -11,4 +12,13 @@ async function generateEmbedding(text) {
   return result.data[0].embedding;
 }
 
-module.exports = { generateEmbedding };
+// Embed MANY chunks -> returns [{ text, embedding }, ...]
+async function embedChunks(chunks) {
+  const store = [];
+  for (const text of chunks) {
+    store.push({ text, embedding: await generateEmbedding(text) });
+  }
+  return store;
+}
+
+module.exports = { generateEmbedding, embedChunks };
