@@ -19,10 +19,19 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-while (true) {
+ while (true) {
   const question = await rl.question("> ");
   if (question === "exit") break;
-  messages.push({ role: "user", content: question });
+
+  const mentions = [...question.matchAll(/@([\w.-]+)/g)].map((m) => m[1]);
+  let context = "";
+  for (const id of mentions) {
+    try {
+      const text = await mcp.readResource(`docs://documents/${id}`);
+      context += `<document id="${id}">\n${text}\n</document>\n`;
+    } catch {}
+  }
+  messages.push({ role: "user", content: context + question });
 
   let response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",

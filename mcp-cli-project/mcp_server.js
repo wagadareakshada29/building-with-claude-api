@@ -1,4 +1,4 @@
-import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {z} from "zod";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
@@ -48,5 +48,42 @@ server.registerTool(
      return {content :[{type:"text",text:"Document updated."}]};
     } 
 );
+server.registerResource(
+  "doc_list",
+  "docs://documents",
+  {
+    description:"List of all documents ids",
+    mimeType:"application/json",
+  },
+  async (uri) => ({
+    contents:[
+      {
+        uri:uri.href,
+        mimeType:"application/json",
+        text: JSON.stringify(Object.keys(docs)),
+      },
+    ],  
+  })
+);
+server.registerResource(
+  "doc_contents",
+  new ResourceTemplate("docs://documents/{doc_id}",{list:undefined}),
+  {
+    description:"Contents of one document",
+    mimeType:"text/plain",
+  },
+  async(uri,{doc_id})=> {
+    if(!(doc_id in docs)) {
+      throw new Error(`Doc with id {doc_id} not found`);
+    }
+    return {
+      contents: [
+        {
+          uri:uri.href,mimeType:"text/plain",text:docs[doc_id]
+        },
+      ],
+    };
+  }
+  );
 const transport = new StdioServerTransport();
 await server.connect(transport);
